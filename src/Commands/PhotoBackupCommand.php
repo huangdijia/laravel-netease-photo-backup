@@ -95,19 +95,26 @@ class PhotoBackupCommand extends Command
 
     private function parseAlbumList($albumUrl)
     {
-        $content = file_get_contents($albumUrl);
+        try {
+            $content = file_get_contents($albumUrl);
+        } catch (\Exception $e) {
+            $this->warn("获取相册配置失败，错误：" . $e->getMessage());
+            return [];
+        }
 
-        preg_match('/(\[[^\]]+\])/', $content, $matches);
+        $content = preg_replace('/^var[^=]+=[^=]+=/', '', $content);
+        $content = trim($content, ';');
+        $matches = [$content, $content];
 
         if (!$matches) {
-            throw new \Exception("解析相册配置失败", 1);
+            $this->warn("解析相册配置失败");
+            return [];
         }
 
         $matches[1] = mb_convert_encoding($matches[1], "UTF-8", "GBK");
         $matches[1] = str_replace("'", '"', $matches[1]);
         $matches[1] = str_replace("\\", "\\\\", $matches[1]);
         $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);
-        // dd($matches[1]);
 
         $albums = json_decode($matches[1], true);
 
@@ -124,15 +131,21 @@ class PhotoBackupCommand extends Command
             $pUrl = 'http://' . $pUrl;
         }
 
-        $content = file_get_contents($pUrl);
-
-        preg_match('/(\[[^\]]+\])/', $content, $matches);
+        try {
+            $content = file_get_contents($pUrl);
+        } catch (\Exception $e) {
+            $this->warn("获取相片配置失败，错误：" . $e->getMessage());
+            return [];
+        }
+        $content = mb_convert_encoding($content, "UTF-8", "GBK");
+        $matches = explode('=', $content, 2);
 
         if (!$matches) {
-            throw new \Exception("解析相片配置失败", 1);
+            $this->warn("解析相片配置失败");
+            return [];
         }
 
-        $matches[1] = mb_convert_encoding($matches[1], "UTF-8", "GBK");
+        $matches[1] = trim($matches[1], ';');
         $matches[1] = str_replace("'", '"', $matches[1]);
         $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);
 

@@ -20,12 +20,16 @@ class PhotoBackupCommand extends Command
         $savepath  = $this->argument('savepath') ?: storage_path('app/netease/');
         $albumRoot = rtrim($savepath, '/') . '/' . $nickname;
 
+        $this->info("正在备份 {$nickname} 相册 from {$this->baseUrl}{$nickname}");
+
         if (!File::isDirectory($savepath)) {
             File::makeDirectory($savepath);
+            $this->info("创建目录 {$savepath}");
         }
 
         if (!File::isDirectory($albumRoot)) {
             File::makeDirectory($albumRoot);
+            $this->info("创建目录 {$albumRoot}");
         }
 
         $albumUrl = $this->getAlbumUrl($nickname);

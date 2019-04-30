@@ -20,7 +20,7 @@ class PhotoBackupCommand extends Command
         $savepath  = $this->argument('savepath') ?: storage_path('app/netease/');
         $albumRoot = rtrim($savepath, '/') . '/' . $nickname;
 
-        $this->info("正在备份 {$nickname} 相册 from {$this->baseUrl}{$nickname}");
+        $this->info("正在备份 {$nickname} 相册 from {$this->baseUrl}{$nickname} to {$albumRoot}");
 
         if (!File::isDirectory($savepath)) {
             File::makeDirectory($savepath);
@@ -36,22 +36,27 @@ class PhotoBackupCommand extends Command
         $albums   = $this->parseAlbumList($albumUrl);
 
         collect($albums)->transform(function ($album) { // 获取每个相册照片
-            $album['items'] = $this->parseAlbumItems('http://' . $album['purl']);
+            $album['items'] = $this->parseAlbumItems($album['purl']);
             return $album;
         })->each(function ($album) use ($albumRoot) {
-            // 建立相册
             $albumPath  = rtrim($albumRoot, '/') . "/" . trim($album['name']) . "/";
             $faildCount = 0;
 
+            // 建立相册目录
             if (!File::isDirectory($albumPath)) {
                 File::makeDirectory($albumPath);
             }
 
-            $this->info("正在抓取相册 {$album['name']}");
-            $this->output->progressStart($album['count']);
+            if (!count($album['items'])) {
+                $this->warn("相册 {$album['name']} 为空或已加密");
+                return;
+            }
 
             // 下载图片
-            collect($album['items'])->each(function ($item) use ($albumPath, &$faildCount) {
+            collect($album['items'])->tap(function ($items) use ($album, $albumPath) {
+                $this->info("正在抓取相册 {$album['name']} to {$albumPath}");
+                $this->output->progressStart($items->count());
+            })->each(function ($item) use ($albumPath, &$faildCount) {
                 $filename = $item['desc'] ?: basename($item['ourl']);
                 $filepath = rtrim($albumPath, '/') . '/' . $filename;
 
@@ -65,11 +70,11 @@ class PhotoBackupCommand extends Command
                     unlink($filepath);
                     info($item['ourl'] . ' 抓取失败，错误：' . $e->getMessage());
                 }
+            })->tap(function () use ($faildCount) {
+                $this->output->progressFinish();
+                $faildCount && $this->warn("抓取失败：{$faildCount}");
             });
 
-            $this->output->progressFinish();
-
-            $faildCount && $this->warn("抓取失败：{$faildCount}");
         });
     }
 
@@ -100,6 +105,7 @@ class PhotoBackupCommand extends Command
 
         $matches[1] = mb_convert_encoding($matches[1], "UTF-8", "GBK");
         $matches[1] = str_replace("'", '"', $matches[1]);
+        $matches[1] = str_replace("\\", "\\\\", $matches[1]);
         $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);
         // dd($matches[1]);
 
@@ -110,6 +116,14 @@ class PhotoBackupCommand extends Command
 
     private function parseAlbumItems($pUrl)
     {
+        if (!$pUrl) {
+            return [];
+        }
+
+        if (!preg_match('/^https?:/', $pUrl)) {
+            $pUrl = 'http://' . $pUrl;
+        }
+
         $content = file_get_contents($pUrl);
 
         preg_match('/(\[[^\]]+\])/', $content, $matches);

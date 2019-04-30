@@ -151,8 +151,11 @@ class PhotoBackupCommand extends Command
 
         $matches[1] = '[' . $matches[1];
         $matches[1] = trim($matches[1], ';');
+        $matches[1] = str_replace('\\"', '', $matches[1]);
+        $matches[1] = str_replace("\\'", '', $matches[1]);
         $matches[1] = str_replace("'", '"', $matches[1]);
-        $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);
+        $matches[1] = str_replace("\\", "\\\\", $matches[1]);
+        $matches[1] = preg_replace('/(\{|,)(\w+):/', '\\1"\\2":', $matches[1]);
 
         $items = json_decode($matches[1], true);
 

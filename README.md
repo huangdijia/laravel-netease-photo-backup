@@ -15,6 +15,8 @@ php artisan netease:photo-backup your-photo-nickname [savepath]
 ## 执行结果
 
 ```bash
+正在备份 your-photo-nickname 相册 from http://photo.163.com/your-photo-nickname
+
 正在抓取相册 新专辑－一生最爱
  19/19 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
 

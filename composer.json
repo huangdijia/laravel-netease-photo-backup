@@ -1,0 +1,37 @@
+{
+    "name": "huangdijia/laravel-netease-photo-backup",
+    "description": "netease photo backup base laravel",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "netease",
+        "photo"
+    ],
+    "homepage": "https://github.com/huangdijia/laravel-netease-photo-backup",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "huangdijia",
+            "email": "huangdijia@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+        "illuminate/support": "~5.7.0|~5.8.0",
+        "illuminate/console": "~5.7.0|~5.8.0"
+    },
+    "autoload": {
+        "files": [
+        ],
+        "psr-4": {
+            "Huangdijia\\Netease\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Huangdijia\\Netease\\PhotoBackupServiceProvider"
+            ]
+        }
+    }
+}

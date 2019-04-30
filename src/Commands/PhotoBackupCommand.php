@@ -67,7 +67,10 @@ class PhotoBackupCommand extends Command
                     $client->get($item['ourl'], ['save_to' => $filepath]);
                 } catch (\Exception $e) {
                     $faildCount++;
-                    unlink($filepath);
+                    if (is_file($filepath)) {
+                        unlink($filepath);
+                    }
+
                     info($item['ourl'] . ' 抓取失败，错误：' . $e->getMessage());
                 }
             })->tap(function () use ($faildCount) {
@@ -80,8 +83,7 @@ class PhotoBackupCommand extends Command
 
     private function getAlbumUrl($nickname = '')
     {
-        $url = $this->baseUrl . $nickname;
-
+        $url     = $this->baseUrl . $nickname;
         $content = file_get_contents($url);
 
         preg_match('/albumUrl\s*:\s*\'([^\']+)/', $content, $matches);
@@ -102,19 +104,21 @@ class PhotoBackupCommand extends Command
             return [];
         }
 
-        $content = preg_replace('/^var[^=]+=[^=]+=/', '', $content);
-        $content = trim($content, ';');
-        $matches = [$content, $content];
+        $content = mb_convert_encoding($content, "UTF-8", "GBK");
+        // $content = preg_replace('/^var[^=]+=[^=]+=/', '', $content);
+        [$null, $content] = explode('=[', $content, 2);
+        $content          = '[' . $content;
+        $content          = trim($content, ';');
+        $matches          = [$content, $content];
 
         if (!$matches) {
             $this->warn("解析相册配置失败");
             return [];
         }
 
-        $matches[1] = mb_convert_encoding($matches[1], "UTF-8", "GBK");
         $matches[1] = str_replace("'", '"', $matches[1]);
         $matches[1] = str_replace("\\", "\\\\", $matches[1]);
-        $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);
+        $matches[1] = preg_replace('/(\{|,)(\w+):/', '\\1"\\2":', $matches[1]);
 
         $albums = json_decode($matches[1], true);
 
@@ -138,13 +142,14 @@ class PhotoBackupCommand extends Command
             return [];
         }
         $content = mb_convert_encoding($content, "UTF-8", "GBK");
-        $matches = explode('=', $content, 2);
+        $matches = explode('=[', $content, 2);
 
         if (!$matches) {
             $this->warn("解析相片配置失败");
             return [];
         }
 
+        $matches[1] = '[' . $matches[1];
         $matches[1] = trim($matches[1], ';');
         $matches[1] = str_replace("'", '"', $matches[1]);
         $matches[1] = preg_replace('/(\w+):/', '"\\1":', $matches[1]);

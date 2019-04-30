@@ -4,7 +4,7 @@ namespace Huangdijia\Netease;
 
 use Illuminate\Support\ServiceProvider;
 
-class PhotoBackupProvider extends ServiceProvider
+class PhotoBackupServiceProvider extends ServiceProvider
 {
     public function register()
     {
